@@ -15,7 +15,7 @@ public class GemboxSpreadsheetConverter : IConverter
         excelFile.Worksheets[0].Rows.Remove(0); // remove header row
 
         var convertedStream = new MemoryStream();
-        excelFile.Save(convertedStream, new CsvSaveOptions('\t') { });
+        excelFile.Save(convertedStream, new CsvSaveOptions('\t'));
 
         return convertedStream;
     }
