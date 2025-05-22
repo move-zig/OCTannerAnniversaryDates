@@ -22,7 +22,7 @@ public class OCTanner : IOCTanner
 
     public async Task SendAnniversaryDatesAsync()
     {
-        var inputStream = this.reader.GetStream();
+        using var inputStream = this.reader.GetStream();
         using var outputStream = this.converter.Convert(inputStream);
         await this.writer.WriteStream(outputStream);
         this.archiver.WriteStream(outputStream);
