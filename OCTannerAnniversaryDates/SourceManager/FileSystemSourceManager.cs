@@ -11,7 +11,9 @@ public partial class FileSystemSourceManager : ISourceManager
 
     private readonly IFileSystem fileSystem;
 
-    [GeneratedRegex(@"^XYZ_(\d{4}-\d{2}-\d{2}-\d{5,6}-(?:AM|PM))\.csv$")]
+    private string? fileFullname = null;
+
+    [GeneratedRegex(@"^XYZ_(\d{4}-\d{2}-\d{2})-(\d{5,6}-(?:AM|PM))\.csv$")]
     private static partial Regex ValidCSVRegex();
 
     public FileSystemSourceManager(IFileSystem filesystem)
@@ -19,25 +21,28 @@ public partial class FileSystemSourceManager : ISourceManager
         this.fileSystem = filesystem;
     }
 
-    /// <inheritdoc />
-    public (Stream, DateTime) ReadStream()
+    /// <inheritdoc/>
+    public bool Locate()
     {
         var files = this.fileSystem.Directory.GetFiles(location, "*.csv")
             .Where(IsValidCSVFile);
 
-        // we expect exactly one file
-        if (files.Count() != 1)
+        var fileCount = files.Count();
+
+        if (fileCount == 0)
+        {
+            return false;
+        }
+
+        // we expect at most one file
+        if (files.Count() > 1)
         {
             throw new Exception("Unexpected number of files in source directory");
         }
 
-        var file = files.First();
+        this.fileFullname = files.First();
 
-        var reportDateTime = this.GetDateTimeFromFilename(this.fileSystem.Path.GetFileName(file));
-
-        var stream = this.fileSystem.FileStream.New(file, FileMode.Open);
-
-        return (stream, reportDateTime);
+        return true;
 
         bool IsValidCSVFile(string fullName)
         {
@@ -46,43 +51,60 @@ public partial class FileSystemSourceManager : ISourceManager
     }
 
     /// <inheritdoc />
-    public void ResetSource()
+    public Stream ReadStream()
     {
-        var directoryInfo = this.fileSystem.DirectoryInfo.New(location);
-
-        foreach (var file in directoryInfo.GetFiles())
+        if (this.fileFullname == null)
         {
-            file.Delete();
+            throw new Exception("No file located");
         }
 
-        foreach (var dir in directoryInfo.GetDirectories())
-        {
-            dir.Delete(true);
-        }
-
-        this.fileSystem.Directory.Delete(location);
+        return this.fileSystem.FileStream.New(this.fileFullname, FileMode.Open);
     }
 
-    private DateTime GetDateTimeFromFilename(string filename)
+    /// <inheritdoc />
+    public DateTime ReportDateTime()
     {
-        Match m = ValidCSVRegex().Match(filename);
+        if (this.fileFullname == null)
+        {
+            throw new Exception("No file located");
+        }
+
+        Match m = ValidCSVRegex().Match(this.fileSystem.Path.GetFileName(this.fileFullname));
         if (!m.Success)
         {
             throw new Exception("Filename doesn't match pattern");
         }
 
         string filenameDate = m.Groups[1].Value;
+        string filenameTime = m.Groups[2].Value;
+
+        if (filenameTime.Length == 8)
+        {
+            filenameTime = "0" + filenameTime;
+        }
 
         Console.WriteLine(filenameDate);
+        Console.WriteLine(filenameTime);
 
-        // Example: 2025-06-30-63059-AM or 2025-07-04-101010-PM
-        string format = "yyyy-MM-dd-hmmss-tt";
+        // Example: 2025-06-30 63059-AM or 2025-07-04 101010-PM
+        string format = "yyyy-MM-dd hhmmss-tt";
 
-        if (DateTime.TryParseExact(filenameDate, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+        if (DateTime.TryParseExact(filenameDate + " " + filenameTime, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
         {
             return parsedDate;
         }
 
         throw new Exception("Unable to determine date from filename");
+    }
+
+    /// <inheritdoc />
+    public void ResetSource()
+    {
+        if (this.fileFullname == null)
+        {
+            throw new Exception("No file located");
+        }
+
+        this.fileSystem.File.Delete(this.fileFullname);
     }
 }

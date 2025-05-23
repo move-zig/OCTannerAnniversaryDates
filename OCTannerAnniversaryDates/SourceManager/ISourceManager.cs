@@ -2,7 +2,12 @@
 
 public interface ISourceManager
 {
-    public (Stream stream, DateTime reportDateTime) ReadStream();
+
+    public bool Locate();
+
+    public Stream ReadStream();
+
+    public DateTime ReportDateTime();
 
     public void ResetSource();
 }

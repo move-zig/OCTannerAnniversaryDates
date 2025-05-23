@@ -36,14 +36,17 @@ public class OCTanner : IOCTanner
     {
         try
         {
-            var (inputStream, reportDateTime) = this.sourceManager.ReadStream();
-            using (inputStream)
+            if (!this.sourceManager.Locate())
             {
-                using var outputStream = this.converter.Convert(inputStream);
-                this.destinationManager.WriteStream(outputStream, reportDateTime);
-                this.archiver.WriteStream(outputStream, reportDateTime);
+                Console.WriteLine("no file found");
+                return;
             }
 
+            var reportDateTime = this.sourceManager.ReportDateTime();
+            using var inputStream = this.sourceManager.ReadStream();
+            using var outputStream = this.converter.Convert(inputStream);
+            this.destinationManager.WriteStream(outputStream, reportDateTime);
+            this.archiver.WriteStream(outputStream, reportDateTime);
             this.sourceManager.ResetSource();
         }
         catch (Exception ex)
