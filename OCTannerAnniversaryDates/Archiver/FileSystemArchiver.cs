@@ -1,7 +1,8 @@
-﻿using System.IO.Abstractions;
+﻿namespace OCTannerAnniversaryDates.Archiver;
 
-namespace OCTannerAnniversaryDates.Archiver;
+using System.IO.Abstractions;
 
+/// <inheritdoc />
 public class FileSystemArchiver : IArchiver
 {
     private const string location = @"C:\archives";
@@ -13,17 +14,23 @@ public class FileSystemArchiver : IArchiver
         this.fileSystem = filesystem;
     }
 
-    public void WriteStream(Stream stream)
+    /// <inheritdoc />
+    public void WriteStream(Stream stream, DateTime reportDateTime)
     {
         if (!this.fileSystem.Directory.Exists(location))
         {
             this.fileSystem.Directory.CreateDirectory(location);
         }
 
-        using var fileStream = this.fileSystem.FileStream.New(this.fileSystem.Path.Join(location, "archive.csv"), FileMode.CreateNew);
+        using var fileStream = this.fileSystem.FileStream.New(this.fileSystem.Path.Join(location, this.ArchiveFilename(reportDateTime)), FileMode.CreateNew);
 
         stream.CopyTo(fileStream);
         fileStream.Flush();
         fileStream.Close();
+    }
+
+    private string ArchiveFilename(DateTime reportDateTime)
+    {
+        return "dslfkjdslfkjd.txt";
     }
 }

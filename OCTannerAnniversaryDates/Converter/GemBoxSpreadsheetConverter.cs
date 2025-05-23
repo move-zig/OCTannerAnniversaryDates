@@ -2,6 +2,7 @@
 
 using GemBox.Spreadsheet;
 
+/// <inheritdoc />
 public class GemboxSpreadsheetConverter : IConverter
 {
     static GemboxSpreadsheetConverter()
@@ -9,6 +10,7 @@ public class GemboxSpreadsheetConverter : IConverter
         SpreadsheetInfo.SetLicense("FREE-LIMITED-KEY");
     }
 
+    /// <inheritdoc />
     public Stream Convert(Stream stream)
     {
         var excelFile = ExcelFile.Load(stream, new CsvLoadOptions(','));
