@@ -43,10 +43,13 @@ public class OCTanner : IOCTanner
             }
 
             var reportDateTime = this.sourceManager.ReportDateTime();
-            using var inputStream = this.sourceManager.ReadStream();
-            using var outputStream = this.converter.Convert(inputStream);
-            this.destinationManager.WriteStream(outputStream, reportDateTime);
-            this.archiver.WriteStream(outputStream, reportDateTime);
+            using (var inputStream = this.sourceManager.ReadStream())
+            {
+                using var outputStream = this.converter.Convert(inputStream);
+                this.destinationManager.WriteStream(outputStream, reportDateTime);
+                this.archiver.WriteStream(outputStream, reportDateTime);
+            }
+
             this.sourceManager.ResetSource();
         }
         catch (Exception ex)
